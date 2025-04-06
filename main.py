@@ -32,9 +32,9 @@ async def run_task(request: Request):
     url = data_json['http']['target']
     payload = data_json['http']['body']
 
-    mail_to = data_json['mail']['target']
-    mail_subject = data_json['mail']['subject']
-    mail_body = data_json['mail']['body']
+    email_vars["mail_to"] = data_json['mail']['target']
+    email_vars["mail_subject"] = data_json['mail']['subject']
+    email_vars["mail_body"] = data_json['mail']['body']
     
     inventory = 'inventory'
     playbook = 'playbook.yml'
