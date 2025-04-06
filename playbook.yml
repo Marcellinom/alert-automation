@@ -26,7 +26,7 @@
       debug:
         var: http_response
     - name: Send email via SMTP
-      mail:
+      community.general.mail:
         host: "{{ smtp_host }}"
         port: "{{ smtp_port }}"
         username: "{{ smtp_username }}"

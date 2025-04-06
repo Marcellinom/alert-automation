@@ -39,7 +39,7 @@ async def run_task(request: Request):
     inventory = 'inventory'
     playbook = 'playbook.yml'
     ssh_user = 'root'
-    mail_config = ' '.join(f'{k}="{v}"' for k, v in email_vars.items())
+    mail_config = ' -e '.join(f'{k}="{v}"' for k, v in email_vars.items())
 
     cmd = [
         'ansible-playbook',
@@ -49,7 +49,7 @@ async def run_task(request: Request):
         '-e', f'ansible_user={ssh_user} cmd="{cmd}"',
         '-e', f'post_url={url}',
         '-e', f"post_body='{json.dumps(payload)}'",
-        mail_config
+        '-e', mail_config
     ]
 
     # Run command
