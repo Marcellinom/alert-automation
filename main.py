@@ -1,20 +1,11 @@
 from fastapi import FastAPI, Request
 from datetime import datetime
-import json
-import subprocess
+from dotenv import load_dotenv
+import json, subprocess, os
 
+load_dotenv()
 app = FastAPI()
 
-email_vars = {
-    "smtp_host": "smtp.mailserver.com",
-    "smtp_port": 587,
-    "smtp_username": "your@email.com",
-    "smtp_password": "yourpassword",
-    "email_from": "your@email.com",
-    "email_to": "",
-    "email_subject": "",
-    "email_body": "",
-}
 
 @app.get("/")
 async def run_task(request: Request):
@@ -22,6 +13,17 @@ async def run_task(request: Request):
 
 @app.post("/alert")
 async def run_task(request: Request):
+    email_vars = {
+        "smtp_host": os.getenv('smpt_host'),
+        "smtp_port": os.getenv('smtp_port'),
+        "smtp_username": os.getenv('smtp_username'),
+        "smtp_password": os.getenv('smtp_password'),
+        "email_from": os.getenv('smtp_from'),
+        "email_to": "",
+        "email_subject": "",
+        "email_body": "",
+    }
+        
     body = await request.body()
     data_json = json.loads(body)
 
@@ -29,6 +31,10 @@ async def run_task(request: Request):
     cmd = data_json['ssh']['command']
     url = data_json['http']['target']
     payload = data_json['http']['body']
+
+    mail_to = data_json['mail']['target']
+    mail_subject = data_json['mail']['subject']
+    mail_body = data_json['mail']['body']
     
     inventory = 'inventory'
     playbook = 'playbook.yml'
@@ -41,7 +47,8 @@ async def run_task(request: Request):
         '--limit', target,
         '-e', f'ansible_user={ssh_user} cmd="{cmd}"',
         '-e', f'post_url={url}',
-        '-e', f"post_body='{json.dumps(payload)}'"
+        '-e', f"post_body='{json.dumps(payload)}'",
+        "-e", f"{' '.join([f'{k}=\"{v}\"' for k, v in email_vars.items()])}"
     ]
 
     # Run command
