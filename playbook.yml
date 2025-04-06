@@ -1,0 +1,39 @@
+- name: Run custom command on remote host
+  hosts: all
+  become: false  # Change to true if you need sudo
+  gather_facts: no
+  tasks:
+    - name: Run custom shell command
+      shell: "{{ cmd }}"
+      register: result
+
+    - name: Make POST request with dynamic body
+      uri:
+        url: "{{ post_url }}"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+        body: "{{ post_body }}"
+        body_format: json
+        status_code: 200
+      register: http_response
+
+    - name: Show command output
+      debug:
+        var: result.stdout
+
+    - name: Show HTTP response
+      debug:
+        var: http_response
+    - name: Send email via SMTP
+      mail:
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        username: "{{ smtp_username }}"
+        password: "{{ smtp_password }}"
+        to: "{{ email_to }}"
+        from: "{{ email_from }}"
+        subject: "{{ email_subject }}"
+        body: "{{ email_body }}"
+        secure: always  # or "starttls" or "never"
+      delegate_to: localhost  # email should be sent from the controller machine
