@@ -1,0 +1,29 @@
+- name: Jalankan Aksi Berdasarkan Event
+  hosts: all
+  become: true
+  vars_files:
+    - vars.yml
+
+  vars: # ini ditulis di cli, bakal manggil tasks di bawah
+    ssh_log: "{{ 'ssh_log' in event }}"
+    ssh_command: "{{ 'ssh_command' in event }}"
+    email: "{{ 'email' in event }}"
+    api: "{{ 'api' in event }}"
+
+  tasks:
+    - name: tulis Log over SSH
+      include_tasks: actions/ssh_log.yml
+      when: ssh_log
+
+    - name: do command over SSH
+      include_tasks: actions/ssh_command.yml
+      when: ssh_command
+
+    - name: kirim email
+      include_tasks: actions/email.yml
+      when: email
+
+    - name: do API call
+      include_tasks: actions/api.yml
+      when: api
+

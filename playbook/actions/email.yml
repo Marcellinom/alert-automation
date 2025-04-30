@@ -1,0 +1,16 @@
+- name: kirim email
+  hosts: all
+  tasks:
+  - name: Send email via SMTP
+        community.general.mail:
+          host: "{{ smtp_host }}"
+          port: "{{ smtp_port }}"
+          username: "{{ smtp_username }}"
+          password: "{{ smtp_password }}"
+          to: "{{ email_to }}"
+          from: "{{ email_from }}"
+          subject: "{{ email_subject }}"
+          body: "{{ email_body }}"
+          secure: always  # or "starttls" or "never"
+        delegate_to: localhost  # email should be sent from the controller machine
+    tags: email

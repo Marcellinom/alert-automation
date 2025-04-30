@@ -1,0 +1,9 @@
+- name: connect SSH dan write a log file
+  hosts: all
+  tasks:
+    - name: Write log
+      become: true # ini buat privilege escalation
+      copy:
+        content: "{{ log }}"
+        dest: "{{ log_name }}"
+      tags: ssh_write_log

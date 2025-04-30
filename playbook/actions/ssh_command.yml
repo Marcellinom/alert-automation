@@ -1,0 +1,11 @@
+- name: connect SSH dan lakukan custom command
+  hosts: all
+  tasks:
+    - name: do command
+      shell: "{{ custom_command }}"
+      register: result
+      tags: ssh_command
+    
+    - name: Show command output
+      debug:
+        var: result.stdout
