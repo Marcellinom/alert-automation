@@ -9,21 +9,28 @@
     ssh_command: "{{ 'ssh_command' in event }}"
     email: "{{ 'email' in event }}"
     api: "{{ 'api' in event }}"
+    disaster-1: "{{ 'disaster A' in event}}"
 
   tasks:
-    - name: tulis Log over SSH
+    - name: INDIVIDUAL TASK - tulis Log over SSH
       include_tasks: actions/ssh_log.yml
       when: ssh_log
 
-    - name: do command over SSH
+    - name: INDIVIDUAL TASK - do command over SSH
       include_tasks: actions/ssh_command.yml
       when: ssh_command
 
-    - name: kirim email
+    - name: INDIVIDUAL TASK - kirim email
       include_tasks: actions/email.yml
       when: email
 
-    - name: do API call
+    - name: INDIVIDUAL TASK - do API call
       include_tasks: actions/api.yml
       when: api
 
+    - name: Handle Disaster A
+      loop:
+        - actions/ssh_log.yml
+        - actions/ssh_command.yml
+      include_tasks: "{{ item }}"
+      when: disaster-1
