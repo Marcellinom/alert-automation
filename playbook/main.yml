@@ -9,7 +9,7 @@
     ssh_command: "{{ 'ssh_command' in event }}"
     email: "{{ 'email' in event }}"
     api: "{{ 'api' in event }}"
-    disaster_1: "{{ 'disaster A' in event}}"
+    disaster_1: "{{ 'Disaster_A' in event}}"
 
   tasks:
     - name: INDIVIDUAL TASK - tulis Log over SSH
@@ -31,5 +31,8 @@
     - name: Handle Disaster A
       block:
         - import_tasks: actions/ssh_log.yml
+          ignore_errors: "{{ blocking != true }}"
+
         - import_tasks: actions/ssh_command.yml
+          ignore_errors: "{{ blocking != true  }}"
       when: disaster_1
