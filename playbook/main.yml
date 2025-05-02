@@ -9,7 +9,7 @@
     ssh_command: "{{ 'ssh_command' in event }}"
     email: "{{ 'email' in event }}"
     api: "{{ 'api' in event }}"
-    disaster-1: "{{ 'disaster A' in event}}"
+    disaster_1: "{{ 'disaster A' in event}}"
 
   tasks:
     - name: INDIVIDUAL TASK - tulis Log over SSH
@@ -33,4 +33,4 @@
         - actions/ssh_log.yml
         - actions/ssh_command.yml
       include_tasks: "{{ item }}"
-      when: disaster-1
+      when: disaster_1
