@@ -29,8 +29,7 @@
       when: api
 
     - name: Handle Disaster A
-      loop:
-        - actions/ssh_log.yml
-        - actions/ssh_command.yml
-      include_tasks: "{{ item }}"
+      block:
+        - import_tasks: actions/ssh_log.yml
+        - import_tasks: actions/ssh_command.yml
       when: disaster_1
