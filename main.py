@@ -1,18 +1,46 @@
 from fastapi import FastAPI, Request
 from datetime import datetime
 from dotenv import load_dotenv
-import json, subprocess, os
-
+import json as j, subprocess, os
+ 
 load_dotenv()
 app = FastAPI()
 
-
+# default
+PLAYBOOK = 'playbook.yml'
+INVENTORY = 'inventory'
+TARGET = 'all'
+ 
 @app.get("/")
 async def run_task(request: Request):
     return {"status": "success"}
 
-@app.post("/alert")
-async def run_task(request: Request):
+def stdout(cmd: list[str]):
+    # Run command
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    # Output results
+    print("STDOUT:\n", result.stdout)
+    print("STDERR:\n", result.stderr)
+    print("Return code:", result.returncode)
+    return result.stdout
+
+def buildDefaultParam(json: dict):
+    if 'target' in json:
+        TARGET = json['target']
+    if 'playbook' in json:
+        PLAYBOOK = json['playbook']
+    if 'inventory' in json:
+        INVENTORY = json['inventory']
+
+    return [
+        'ansible-playbook', 
+        '-i', INVENTORY, PLAYBOOK, 
+        '--limit', TARGET, 
+        '-e', f'ansible_user=root'
+    ]
+
+def buildEmail(json: dict) -> list[str]:
     email_vars = {
         "smtp_host": os.getenv('smpt_host'),
         "smtp_port": os.getenv('smtp_port'),
@@ -23,41 +51,69 @@ async def run_task(request: Request):
         "email_subject": "",
         "email_body": "",
     }
-        
-    body = await request.body()
-    data_json = json.loads(body)
+    email_vars["email_to"] = json['target']
+    email_vars["email_subject"] = json['subject']
+    email_vars["email_body"] = json['body']
 
-    target = data_json['ssh']['target']
-    cmd = data_json['ssh']['command']
-    url = data_json['http']['target']
-    payload = data_json['http']['body']
+    return ['-e', f'{k}="{v}"' for k, v in email_vars.items()]
 
-    email_vars["email_to"] = data_json['mail']['target']
-    email_vars["email_subject"] = data_json['mail']['subject']
-    email_vars["email_body"] = data_json['mail']['body']
-    
-    inventory = 'inventory'
-    playbook = 'playbook.yml'
-    ssh_user = 'root'
-    mail_config = ' -e '.join(f'{k}="{v}"' for k, v in email_vars.items())
-
-    cmd = [
-        'ansible-playbook',
-        '-i', inventory,
-        playbook,
-        '--limit', target,
-        '-e', f'ansible_user={ssh_user} cmd="{cmd}"',
-        '-e', f'post_url={url}',
-        '-e', f"post_body='{json.dumps(payload)}'",
-        '-e', mail_config
+def buildApiCallParam(json: dict) -> list[str]:
+    return [
+        '-e', f'post_url={json['url']}',
+        '-e', f'post_body={json['post_body']}'
     ]
 
-    # Run command
-    result = subprocess.run(cmd, capture_output=True, text=True)
+def buildSshCommandParam(json: dict) -> list[str]:
+    return [
+        '-e', f'command={json['command']}'
+    ]
 
-    # Output results
-    print("STDOUT:\n", result.stdout)
-    print("STDERR:\n", result.stderr)
-    print("Return code:", result.returncode)
-    return result.stdout
+def buildSshLogParam(json: dict) -> list[str]:
+    return [
+        '-e', f'log={json["content"]}', 
+        '-e', f'log_name={json['destination_path']}'
+    ]
 
+@app.post("/ssh_log")
+async def log_ssh(req: Request):
+    body = await req.body()
+    data = j.loads(body)
+
+    cmd = buildDefaultParam(data) + buildSshLogParam(data['ssh_log']) + ['-e', 'event=ssh_log']
+    return stdout(cmd)
+
+@app.post("/ssh_command")
+async def ssh_command(req: Request):
+    body = await req.body()
+    data = j.loads(body)
+
+    cmd = buildDefaultParam(data) + buildSshCommandParam(data['ssh_command']) + ['-e', 'event=ssh_command']
+    return stdout(cmd)
+
+@app.post("/api_call")
+async def api_call(req: Request):
+    body = await req.body()
+    data = j.loads(body)
+
+    cmd = buildDefaultParam(data) + buildApiCallParam(data['api_call']) + ['-e', 'event=api']
+    return stdout(cmd)
+
+@app.post("/email")
+async def email(req: Request):
+    body = await req.body()
+    data = j.loads(body)
+
+    cmd = buildDefaultParam(data) + buildEmail(data['email']) + ['-e', 'event=email']
+    return stdout(cmd)
+
+@app.post("/disaster_1")
+async def run_task(request: Request):
+    body = await request.body()
+    data = j.loads(body)
+    
+    cmd = buildDefaultParam(data) 
+    + buildSshLogParam(data['ssh_log'])
+    + buildSshCommandParam(data['ssh_command'])
+    + ['-e', 'event=disaster_1']
+
+    return stdout(cmd)
